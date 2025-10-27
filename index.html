@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>八字排盘 | Bazi Fortune Telling</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {primary: '#6b5b95', secondary: '#feb236', neutral: '#2c3e50'},
+                    fontFamily: {sans: ['Inter', 'system-ui', 'sans-serif']}
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .bazi-shadow {
+                box-shadow: 0 4px 20px rgba(107, 91, 149, 0.15);
+            }
+
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none;
+            }
+
+            .btn-hover {
+                @apply hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 active:translate-y-0;
+            }
+
+            /* 五行条形图悬停效果补充 */
+            .element-bar {
+                @apply transition-all duration-300 hover:scale-y-105 hover:shadow-md;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-neutral font-sans">
+<div class="max-w-4xl mx-auto p-4 sm:p-6">
+    <!-- 语言切换 -->
+    <div class="flex justify-end mb-4">
+        <button id="lang-zh" class="px-3 py-1 bg-primary text-white rounded-l-md">中文</button>
+        <button id="lang-en" class="px-3 py-1 bg-gray-200 text-gray-700 rounded-r-md">English</button>
+    </div>
+    <!-- 标题 -->
+    <div class="text-center mb-6">
+        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-primary mb-2 lang-zh">八字排盘计算器</h1>
+        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-primary mb-2 lang-en hidden">Bazi Fortune Calculator</h1>
+        <p class="text-gray-600 lang-zh">传统八字命盘解析，揭示人生运势</p>
+        <p class="text-gray-600 lang-en hidden">Traditional Bazi chart analysis to reveal life fortune</p>
+    </div>
+    <!-- 主容器 -->
+    <div class="bg-white rounded-xl bazi-shadow overflow-hidden">
+        <!-- 信息录入 -->
+        <div id="input-section" class="p-6">
+            <form id="baziForm" class="space-y-5">
+                <!-- 姓名输入 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2 lang-zh">姓氏</label>
+                        <label class="block text-gray-700 mb-2 lang-en hidden">Last Name</label>
+                        <input type="text" name="xing" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus"
+                               placeholder="请输入姓氏" data-ph-en="Enter last name">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2 lang-zh">名字</label>
+                        <label class="block text-gray-700 mb-2 lang-en hidden">First Name</label>
+                        <input type="text" name="ming" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus"
+                               placeholder="请输入名字" data-ph-en="Enter first name">
+                    </div>
+                </div>
+                <!-- 出生日期（单个date输入框） -->
+                <div>
+                    <label class="block text-gray-700 mb-2 lang-zh">出生日期</label>
+                    <label class="block text-gray-700 mb-2 lang-en hidden">Date of Birth</label>
+                    <input type="date" name="birthday" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus"
+                           required data-ph-zh="选择出生日期" data-ph-en="Select date of birth">
+                </div>
+                <!-- 出生时辰与性别 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 mb-2 lang-zh">出生时辰</label>
+                        <label class="block text-gray-700 mb-2 lang-en hidden">Birth Hour</label>
+                        <select name="hour" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus" required>
+                            <option value="">请选择（Select）</option>
+                            <option value="0">子时 (23:00-1:00)</option>
+                            <option value="1">丑时 (1:00-3:00)</option>
+                            <option value="2">寅时 (3:00-5:00)</option>
+                            <option value="3">卯时 (5:00-7:00)</option>
+                            <option value="4">辰时 (7:00-9:00)</option>
+                            <option value="5">巳时 (9:00-11:00)</option>
+                            <option value="6">午时 (11:00-13:00)</option>
+                            <option value="7">未时 (13:00-15:00)</option>
+                            <option value="8">申时 (15:00-17:00)</option>
+                            <option value="9">酉时 (17:00-19:00)</option>
+                            <option value="10">戌时 (19:00-21:00)</option>
+                            <option value="11">亥时 (21:00-23:00)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2 lang-zh">性别</label>
+                        <label class="block text-gray-700 mb-2 lang-en hidden">Gender</label>
+                        <div class="flex space-x-4">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="sex" value="1" checked class="w-4 h-4 text-primary">
+                                <span class="ml-2 lang-zh">男</span>
+                                <span class="ml-2 lang-en hidden">Male</span>
+                            </label>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="radio" name="sex" value="0" class="w-4 h-4 text-primary">
+                                <span class="ml-2 lang-zh">女</span>
+                                <span class="ml-2 lang-en hidden">Female</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <!-- 提交按钮 -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-primary text-white font-medium py-3 px-6 rounded-lg shadow btn-hover flex items-center justify-center">
+                        <span class="lang-zh">立即查询</span>
+                        <span class="lang-en hidden">Query Now</span>
+                        <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- 结果展示 -->
+        <div id="result-section" class="p-6 hidden">
+            <div class="mb-6">
+                <button id="back-to-input" class="text-primary hover:text-primary/80 font-medium flex items-center btn-hover">
+                    <i class="fa fa-arrow-left mr-1"></i>
+                    <span class="lang-zh">返回修改</span>
+                    <span class="lang-en hidden">Back to Edit</span>
+                </button>
+            </div>
+            <!-- 基本信息 卡片 -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">基本信息</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">Basic Information</h2>
+                <p><b class="lang-zh">姓名：</b><b class="lang-en hidden">Name：</b><span id="res-name">-</span></p>
+                <p><b class="lang-zh">性别：</b><b class="lang-en hidden">Gender：</b><span id="res-gender">-</span></p>
+                <p><b class="lang-zh">出生日期：</b><b class="lang-en hidden">Date of Birth：</b><span id="res-date">-</span></p>
+            </div>
+
+            <!-- 八字命盘 卡片 -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">🀄 八字命盘</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">🀄 Bazi Chart</h2>
+                <table class="w-full border-collapse text-center">
+                    <thead>
+                    <tr class="bg-gray-50">
+                        <th class="border p-3 lang-zh">八字</th>
+                        <th class="border p-3 lang-en hidden">Bazi</th>
+                        <th class="border p-3 lang-zh">年柱</th>
+                        <th class="border p-3 lang-en hidden">Year Pillar</th>
+                        <th class="border p-3 lang-zh">月柱</th>
+                        <th class="border p-3 lang-en hidden">Month Pillar</th>
+                        <th class="border p-3 lang-zh">日柱</th>
+                        <th class="border p-3 lang-en hidden">Day Pillar</th>
+                        <th class="border p-3 lang-zh">时柱</th>
+                        <th class="border p-3 lang-en hidden">Hour Pillar</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="bg-gray-50">
+                        <td class="border p-3 font-medium lang-zh">天干</td>
+                        <td class="border p-3 font-medium lang-en hidden">Heavenly Stems</td>
+                        <td id="tg-year" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="tg-month" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="tg-day" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="tg-hour" class="border p-3 text-primary text-xl font-bold"></td>
+                    </tr>
+                    <tr>
+                        <td class="border p-3 font-medium lang-zh">地支</td>
+                        <td class="border p-3 font-medium lang-en hidden">Earthly Branches</td>
+                        <td id="dz-year" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="dz-month" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="dz-day" class="border p-3 text-primary text-xl font-bold"></td>
+                        <td id="dz-hour" class="border p-3 text-primary text-xl font-bold"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 五行分析 卡片（优化后） -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">五行分析</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">Five Elements Analysis</h2>
+                <!-- 图表容器：增加背景和内边距，优化布局 -->
+                <div id="five-elements" class="flex items-end justify-around h-52 gap-2 px-6 py-8 bg-gray-50 rounded-lg"></div>
+            </div>
+
+            <!-- 流年运势 卡片 -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">流年运势</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">Annual Fortune</h2>
+                <table class="w-full border-collapse text-sm" id="liunian-table">
+                    <thead>
+                    <tr class="bg-gray-50">
+                        <th class="border p-2 lang-zh">年龄</th>
+                        <th class="border p-2 lang-en hidden">Age</th>
+                        <th class="border p-2 lang-zh">年份</th>
+                        <th class="border p-2 lang-en hidden">Year</th>
+                        <th class="border p-2 lang-zh">流年</th>
+                        <th class="border p-2 lang-en hidden">Annual Pillar</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <!-- 性格解析 卡片 -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">性格解析</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">Personality Analysis</h2>
+                <div id="personality" class="text-gray-700 whitespace-pre-line"></div>
+            </div>
+
+            <!-- 事业分析 卡片 -->
+            <div class="bg-white rounded-xl bazi-shadow p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-zh">💼 事业分析</h2>
+                <h2 class="text-lg font-semibold mb-4 text-primary lang-en hidden">💼 Career Analysis</h2>
+                <div id="career-analysis" class="text-gray-700 whitespace-pre-line"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 表单提交（包含优化后的五行图表逻辑）
+        document.getElementById("baziForm").addEventListener("submit", async e => {
+            e.preventDefault();
+            const form = e.target;
+            const params = new URLSearchParams(new FormData(form));
+            params.append("api_key", "kkmp326");
+            const url = "https://flask-hello-world-jet-zeta-29.vercel.app/bazi?" + params.toString();
+            const res = await fetch(url);
+            const json = await res.json();
+
+            if (json.code !== 0) {
+                alert("查询失败: " + json.message);
+                return;
+            }
+
+            const data = json.data;
+            // 基本信息展示
+            document.getElementById("res-name").textContent = form.xing.value + form.ming.value;
+            document.getElementById("res-gender").textContent = form.sex.value === "1"
+                ? (document.getElementById("lang-zh").classList.contains("bg-primary") ? "男" : "Male")
+                : (document.getElementById("lang-zh").classList.contains("bg-primary") ? "女" : "Female");
+            document.getElementById("res-date").textContent = `${form.birthday.value} ${form.hour.options[form.hour.selectedIndex].text}`;
+
+            // 八字命盘填充
+            const bazi = data.bazi;
+            document.getElementById("tg-year").textContent = bazi[0];
+            document.getElementById("tg-month").textContent = bazi[1];
+            document.getElementById("tg-day").textContent = bazi[2];
+            document.getElementById("tg-hour").textContent = bazi[3];
+            document.getElementById("dz-year").textContent = bazi[4];
+            document.getElementById("dz-month").textContent = bazi[5];
+            document.getElementById("dz-day").textContent = bazi[6];
+            document.getElementById("dz-hour").textContent = bazi[7];
+
+            // 【优化后的五行分析图表】
+            const wuxing = data.wuxing.strength_all;
+            const fe = document.getElementById("five-elements");
+            fe.innerHTML = "";
+            const maxVal = Math.max(...Object.values(wuxing).map(v => parseFloat(v)));
+
+            // 五行专属配色（背景+边框+文字，符合传统认知）
+            const elementStyleMap = {
+                "金": {
+                    barClass: "bg-gray-100 border-gray-400",
+                    textClass: "text-gray-700"
+                },
+                "木": {
+                    barClass: "bg-green-100 border-green-500",
+                    textClass: "text-green-700"
+                },
+                "水": {
+                    barClass: "bg-blue-100 border-blue-500",
+                    textClass: "text-blue-700"
+                },
+                "火": {
+                    barClass: "bg-red-100 border-red-500",
+                    textClass: "text-red-700"
+                },
+                "土": {
+                    barClass: "bg-yellow-100 border-yellow-500",
+                    textClass: "text-yellow-700"
+                }
+            };
+
+            // 生成每个五行的条形图（带数值标签+悬停效果）
+            for (const [element, value] of Object.entries(wuxing)) {
+                const strength = parseFloat(value).toFixed(2); // 保留2位小数，显示更精准
+                // 计算条形高度（最小高度5%，避免数值过小时看不见）
+                const heightRatio = strength / maxVal;
+                const barHeight = heightRatio < 0.05 ? "5%" : `${(heightRatio * 100).toFixed(1)}%`;
+
+                const barContainer = document.createElement("div");
+                barContainer.className = "flex flex-col items-center justify-end w-16";
+                barContainer.innerHTML = `
+                    <!-- 五行强度数值标签 -->
+                    <div class="mb-1 font-medium ${elementStyleMap[element].textClass}">${strength}</div>
+                    <!-- 五行条形（带边框+悬停放大） -->
+                    <div class="element-bar ${elementStyleMap[element].barClass} border rounded-t-md" style="height: ${barHeight}; width: 100%;"></div>
+                    <!-- 五行名称 -->
+                    <span class="mt-2 text-sm font-semibold ${elementStyleMap[element].textClass}">${element}</span>
+                `;
+                fe.appendChild(barContainer);
+            }
+
+            // 流年运势填充
+            const tbody = document.querySelector("#liunian-table tbody");
+            tbody.innerHTML = "";
+            data.liunian.forEach(l => {
+                tbody.innerHTML += `<tr>
+                    <td class="border p-2">${l.age}</td>
+                    <td class="border p-2">${l.year}</td>
+                    <td class="border p-2">${l.lye}</td>
+                </tr>`;
+            });
+
+            // 事业分析（处理换行）
+            const careerDiv = document.getElementById("career-analysis");
+            let shiyeText = data.wuxing?.shiye || "暂无事业分析数据";
+            shiyeText = shiyeText.replace(/\\u003Cbr\\u003E|\\r\\n/g, "<br>");
+            careerDiv.innerHTML = shiyeText;
+
+            // 性格解析
+            document.getElementById("personality").textContent = data.personality?.trim() || "暂无性格解析数据";
+
+            // 显示结果区，隐藏输入区
+            document.getElementById("input-section").classList.add("hidden");
+            document.getElementById("result-section").classList.remove("hidden");
+        });
+
+        // 返回修改
+        document.getElementById("back-to-input").addEventListener("click", () => {
+            document.getElementById("result-section").classList.add("hidden");
+            document.getElementById("input-section").classList.remove("hidden");
+        });
+
+        // 语言切换（同步更新占位符）
+        document.getElementById("lang-zh").addEventListener("click", () => {
+            document.querySelectorAll(".lang-zh").forEach(el => el.classList.remove("hidden"));
+            document.querySelectorAll(".lang-en").forEach(el => el.classList.add("hidden"));
+            document.getElementById("lang-zh").classList.add("bg-primary", "text-white");
+            document.getElementById("lang-zh").classList.remove("bg-gray-200", "text-gray-700");
+            document.getElementById("lang-en").classList.add("bg-gray-200", "text-gray-700");
+            document.getElementById("lang-en").classList.remove("bg-primary", "text-white");
+            // 更新输入框占位符
+            document.querySelector('input[name="xing"]').placeholder = "请输入姓氏";
+            document.querySelector('input[name="ming"]').placeholder = "请输入名字";
+        });
+
+        document.getElementById("lang-en").addEventListener("click", () => {
+            document.querySelectorAll(".lang-zh").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".lang-en").forEach(el => el.classList.remove("hidden"));
+            document.getElementById("lang-en").classList.add("bg-primary", "text-white");
+            document.getElementById("lang-en").classList.remove("bg-gray-200", "text-gray-700");
+            document.getElementById("lang-zh").classList.add("bg-gray-200", "text-gray-700");
+            document.getElementById("lang-zh").classList.remove("bg-primary", "text-white");
+            // 更新输入框占位符
+            document.querySelector('input[name="xing"]').placeholder = document.querySelector('input[name="xing"]').dataset.phEn;
+            document.querySelector('input[name="ming"]').placeholder = document.querySelector('input[name="ming"]').dataset.phEn;
+        });
+    </script>
+</body>
+</html>

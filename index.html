@@ -78,7 +78,7 @@
                     <input type="date" name="birthday" class="w-full px-4 py-2 border border-gray-300 rounded-lg input-focus"
                            required data-ph-zh="选择出生日期" data-ph-en="Select date of birth">
                 </div>
-                <!-- 出生时辰与性别 -->
+                <!-- 出生时辰与性别：option的value仍显示原索引，后续提交时转换为对应起始小时 -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-gray-700 mb-2 lang-zh">出生时辰</label>
@@ -227,12 +227,39 @@
         </div>
     </div>
     <script>
-        // 表单提交（包含优化后的五行图表逻辑）
+        // 表单提交（核心修改：时辰参数按“起始小时”转换传值）
         document.getElementById("baziForm").addEventListener("submit", async e => {
             e.preventDefault();
             const form = e.target;
-            const params = new URLSearchParams(new FormData(form));
+
+            // 1. 定义时辰索引与对应“起始小时”的映射关系（按规则类推）
+            const hourMap = {
+                "0": "23",  // 子时：23:00-1:00 → 传23
+                "1": "1",   // 丑时：1:00-3:00 → 传1
+                "2": "3",   // 寅时：3:00-5:00 → 传3
+                "3": "5",   // 卯时：5:00-7:00 → 传5
+                "4": "7",   // 辰时：7:00-9:00 → 传7
+                "5": "9",   // 巳时：9:00-11:00 → 传9
+                "6": "11",  // 午时：11:00-13:00 → 传11
+                "7": "13",  // 未时：13:00-15:00 → 传13
+                "8": "15",  // 申时：15:00-17:00 → 传15
+                "9": "17",  // 酉时：17:00-19:00 → 传17
+                "10": "19", // 戌时：19:00-21:00 → 传19
+                "11": "21"  // 亥时：21:00-23:00 → 传21
+            };
+            // 2. 获取选择的时辰索引，转换为对应起始小时
+            const selectedHourIndex = form.hour.value;
+            const actualHour = hourMap[selectedHourIndex];
+
+            // 3. 构建请求参数（使用转换后的实际小时值）
+            const params = new URLSearchParams();
+            params.append("xing", form.xing.value);
+            params.append("ming", form.ming.value);
+            params.append("birthday", form.birthday.value);
+            params.append("hour", actualHour); // 传递转换后的小时（如23、1、3等）
+            params.append("sex", form.sex.value);
             params.append("api_key", "kkmp326");
+
             const url = "https://flask-hello-world-jet-zeta-29.vercel.app/bazi?" + params.toString();
             const res = await fetch(url);
             const json = await res.json();
@@ -243,7 +270,7 @@
             }
 
             const data = json.data;
-            // 基本信息展示
+            // 基本信息展示（时辰文本仍显示原选择项，仅传值改变）
             document.getElementById("res-name").textContent = form.xing.value + form.ming.value;
             document.getElementById("res-gender").textContent = form.sex.value === "1"
                 ? (document.getElementById("lang-zh").classList.contains("bg-primary") ? "男" : "Male")
@@ -261,51 +288,27 @@
             document.getElementById("dz-day").textContent = bazi[6];
             document.getElementById("dz-hour").textContent = bazi[7];
 
-            // 【优化后的五行分析图表】
+            // 五行分析图表（保持优化后效果）
             const wuxing = data.wuxing.strength_all;
             const fe = document.getElementById("five-elements");
             fe.innerHTML = "";
             const maxVal = Math.max(...Object.values(wuxing).map(v => parseFloat(v)));
-
-            // 五行专属配色（背景+边框+文字，符合传统认知）
             const elementStyleMap = {
-                "金": {
-                    barClass: "bg-gray-100 border-gray-400",
-                    textClass: "text-gray-700"
-                },
-                "木": {
-                    barClass: "bg-green-100 border-green-500",
-                    textClass: "text-green-700"
-                },
-                "水": {
-                    barClass: "bg-blue-100 border-blue-500",
-                    textClass: "text-blue-700"
-                },
-                "火": {
-                    barClass: "bg-red-100 border-red-500",
-                    textClass: "text-red-700"
-                },
-                "土": {
-                    barClass: "bg-yellow-100 border-yellow-500",
-                    textClass: "text-yellow-700"
-                }
+                "金": {barClass: "bg-gray-100 border-gray-400", textClass: "text-gray-700"},
+                "木": {barClass: "bg-green-100 border-green-500", textClass: "text-green-700"},
+                "水": {barClass: "bg-blue-100 border-blue-500", textClass: "text-blue-700"},
+                "火": {barClass: "bg-red-100 border-red-500", textClass: "text-red-700"},
+                "土": {barClass: "bg-yellow-100 border-yellow-500", textClass: "text-yellow-700"}
             };
-
-            // 生成每个五行的条形图（带数值标签+悬停效果）
             for (const [element, value] of Object.entries(wuxing)) {
-                const strength = parseFloat(value).toFixed(2); // 保留2位小数，显示更精准
-                // 计算条形高度（最小高度5%，避免数值过小时看不见）
+                const strength = parseFloat(value).toFixed(2);
                 const heightRatio = strength / maxVal;
                 const barHeight = heightRatio < 0.05 ? "5%" : `${(heightRatio * 100).toFixed(1)}%`;
-
                 const barContainer = document.createElement("div");
                 barContainer.className = "flex flex-col items-center justify-end w-16";
                 barContainer.innerHTML = `
-                    <!-- 五行强度数值标签 -->
                     <div class="mb-1 font-medium ${elementStyleMap[element].textClass}">${strength}</div>
-                    <!-- 五行条形（带边框+悬停放大） -->
                     <div class="element-bar ${elementStyleMap[element].barClass} border rounded-t-md" style="height: ${barHeight}; width: 100%;"></div>
-                    <!-- 五行名称 -->
                     <span class="mt-2 text-sm font-semibold ${elementStyleMap[element].textClass}">${element}</span>
                 `;
                 fe.appendChild(barContainer);
@@ -336,13 +339,13 @@
             document.getElementById("result-section").classList.remove("hidden");
         });
 
-        // 返回修改
+        // 返回修改（功能不变）
         document.getElementById("back-to-input").addEventListener("click", () => {
             document.getElementById("result-section").classList.add("hidden");
             document.getElementById("input-section").classList.remove("hidden");
         });
 
-        // 语言切换（同步更新占位符）
+        // 语言切换（功能不变）
         document.getElementById("lang-zh").addEventListener("click", () => {
             document.querySelectorAll(".lang-zh").forEach(el => el.classList.remove("hidden"));
             document.querySelectorAll(".lang-en").forEach(el => el.classList.add("hidden"));
@@ -350,7 +353,6 @@
             document.getElementById("lang-zh").classList.remove("bg-gray-200", "text-gray-700");
             document.getElementById("lang-en").classList.add("bg-gray-200", "text-gray-700");
             document.getElementById("lang-en").classList.remove("bg-primary", "text-white");
-            // 更新输入框占位符
             document.querySelector('input[name="xing"]').placeholder = "请输入姓氏";
             document.querySelector('input[name="ming"]').placeholder = "请输入名字";
         });
@@ -362,7 +364,6 @@
             document.getElementById("lang-en").classList.remove("bg-gray-200", "text-gray-700");
             document.getElementById("lang-zh").classList.add("bg-gray-200", "text-gray-700");
             document.getElementById("lang-zh").classList.remove("bg-primary", "text-white");
-            // 更新输入框占位符
             document.querySelector('input[name="xing"]').placeholder = document.querySelector('input[name="xing"]').dataset.phEn;
             document.querySelector('input[name="ming"]').placeholder = document.querySelector('input[name="ming"]').dataset.phEn;
         });
